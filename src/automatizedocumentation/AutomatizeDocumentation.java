@@ -122,7 +122,7 @@ public class AutomatizeDocumentation {
 				changelogMessages.append(description + "\n\n");
 
 				this.printIssuesLabels(i);
-				this.printIssuesNotes(projectId, i);
+				changelogMessages.append(this.printIssuesNotes(projectId, i));
 			}
 		});
 
@@ -143,17 +143,30 @@ public class AutomatizeDocumentation {
 	 * @param projectId
 	 * @param i
 	 */
-	private void printIssuesNotes(final Integer projectId, final Issue i) {
+	private StringBuilder printIssuesNotes(final Integer projectId, final Issue i) {
+
+		final StringBuilder notes = new StringBuilder();
 
 		try {
 
 			final List<Note> notesLst = this.gitLabApi.getNotesApi().getIssueNotes(projectId, i.getIid());
 			System.out.println("Number of notes found: " + notesLst.size());
-			notesLst.stream().forEach(n -> System.out.println("\t" + n.getBody()));
+
+			final boolean isClosed = notesLst.stream().filter(n -> n.getBody().contains("closed")).findAny()
+					.isPresent();
+
+			if (isClosed) {
+				notesLst.stream().forEach(n -> {
+					System.out.println("\t" + n.getBody());
+					notes.append("\n* " + n.getBody());
+				});
+			}
 
 		} catch (final GitLabApiException e) {
 			e.printStackTrace();
 		}
+
+		return notes;
 	}
 
 	/**
